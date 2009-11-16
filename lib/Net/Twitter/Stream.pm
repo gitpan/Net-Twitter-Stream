@@ -2,6 +2,7 @@ package Net::Twitter::Stream;
 use strict;
 use warnings;
 use LWP::UserAgent;
+our $VERSION = '0.2';
 1;
 
 =head1 NAME
