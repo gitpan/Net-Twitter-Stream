@@ -3,6 +3,4 @@ README
 LICENSE
 Makefile.PL
 lib/Net/Twitter/Stream.pm
-lib/Net/Twitter/Stream/Track.pm
-lib/Net/Twitter/Stream/Follow.pm
 t/001_load.t

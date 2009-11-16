@@ -1,111 +1,22 @@
 package Net::Twitter::Stream;
-use MIME::Base64;
-use IO::Socket;
-use Danga::Socket;
-use JSON;
-use Data::Dumper;
-use base ( 'Danga::Socket' );
-use fields qw/headers_done uri got_tweet first_buf_debug last_buf_debug/;
-our $VERSION = "0.1";
-
-require Net::Twitter::Stream::Track;
-require Net::Twitter::Stream::Follow;
-
+use strict;
+use warnings;
+use LWP::UserAgent;
 1;
-
-sub new {
-  my $self = shift;
-  $self = fields::new($self) unless ref $self;
-  my $un = shift;
-  my $pw = shift;
-  my $uri = shift;
-  $self->{got_tweet} = shift;
-  my $auth = MIME::Base64::encode ( "$un:$pw" );
-  $self->SUPER::new ( IO::Socket::INET->new ( "stream.twitter.com:80" ), @_ );
-
-# send the http get request to twitter
-  $self->write ( <<EOF );
-GET $uri HTTP/1.0
-Host: stream.twitter.com
-Authorization: Basic $auth
-
-EOF
-  $self->watch_read(1);
-  return $self;
-}
-
-sub i_close { 
-  my $self = shift;
-  warn "twitter i_close conection"; 
-  warn $self->{first_buf_debug};
-  warn $self->{last_buf_debug};
-  exit;
-}
-
-sub close { 
-  my $self = shift;
-  warn "twitter close conection"; 
-  warn $self->{first_buf_debug};
-  warn $self->{last_buf_debug};
-  exit; 
-}
-
-# read chunks of data from the server
-sub event_read {
-  my $self = shift;
-  my $buf = $self->read ( 1024 * 8 );
-  $self->i_close unless defined $buf;
-
-  if ( $$buf =~ /^HTTP/ ) {
-    $self->{headers_done} = 1;
-    $self->{first_buf_debug} = $$buf;
-    # dump anything else in this chunk
-    return;
-  }
-
-  $self->{last_buf_debug} = $$buf;
-  if ( $self->{headers_done} ) {
-    # will be receiving json, one tweet per line
-    foreach ( split /\n/, $$buf ) {
-      $self->got_tweet ( $_ );
-    }
-  }
-}
-
-sub got_tweet {
-  my ( $self, $js ) = @_;
-  # sometimes there is a keep alive newline
-  return if $js =~ /^\s*$/;
-
-  my $obj;
-  eval { $obj = from_json ( $js );};
-  if ( $@ ) {
-    warn "$@\n$js\n";
-  } else {
-    $self->{got_tweet} ( $obj );
-  }
-}
 
 =head1 NAME
 
 Using Twitter's streaming api.
 
 =head1 SYNOPSIS
-     use Net::Twitter::Stream;
-     # Create "track" connection with a list of keywords.
-     Net::Twitter::Stream::Track->new ( $username, $password,
-		      'ffa,football,soccer,yankees,mashchat,mashable,tinychat,perl,memcached,nginx,javascript,talkabee,f136bc2d9f24,hackernews,reddit,clojure',
-                      \&got_tweet_callback );
 
-     # Create "follow" connection with a list of user ids.
-     Net::Twitter::Stream::Follow->new ( $username, $password,
-		       '27712481,14252288,972651,679303,18703227,3839,27712481',
-                       \&got_tweet_callback );
+  use Net::Twitter::Stream;
 
-     # Start listening
-     Danga::Socket->EventLoop;
+  Net::Twitter::Stream->new ( user => $username, pass => $password, callback => \&got_tweet,
+                              track => 'perl,tinychat,emacs',
+                              follow => '27712481,14252288,972651,679303,18703227,3839,27712481' );
 
-     sub got_tweet_callback {
+     sub got_tweet {
 	 my $tweet = shift;
 	 print "By: $tweet->{user}{screen_name}\n";
 	 print "Message: $tweet->{text}\n";
@@ -118,21 +29,51 @@ The api is currently under "alpha test" release, but hopfully it will
 prove scalable and become the normal way to suck data from the
 twitterverse.
 
-Here is an example of how to use the api.  In particular the code connects
-to a track and a follow stream.  Once connected the data flows from server
-to client until something goes wrong.
+Recent update: Track and follow are now merged into a single api call.
+/1/status/filter.json now allows a single connection go listen for keywords
+and follow a list of users.
 
-Danga::Socket is required for event based network I/O and to manage
-multiple connections.  I run this on a Mac and use Net::GrowlClient to
-display tweets as they come in but that can be easily changed.
-
-HTTP Basic authentication is supported so you will need a twitter
+HTTP Basic authentication is supported (no OAuth yet) so you will need a twitter
 account to connect.
 
-As far a I can tell twitter only allows one connection per IP.
+Options 
+  user, pass: required, twitter account user/password
+  callback: required, a subroutine called on each received tweet
+  format: optional, returned data format, json or xml, defaults to json
 
 perl@redmond5.com
 @martinredmond
 
 =cut
+
+
+sub new {
+  my $class = shift;
+  my %args = @_;
+  die "Usage: Net::Twitter::Stream->new ( user => 'user', pass => 'pass', callback => \&got_tweet_cb )" unless
+      $args{user} && $args{pass} && $args{callback};
+  my $self = bless {};
+  $self->{user} = $args{user};
+  $self->{pass} = $args{pass};
+  $self->{got_tweet} = $args{callback};
+  my $format = 'json';
+  $format = $args{format} if $args{format};
+
+  my $content = "follow=$args{follow}" if $args{follow};
+  $content = "track=$args{track}" if $args{track};
+  $content = "follow=$args{follow}&track=$args{track}\r\n" if $args{track} && $args{follow};
+
+  my $req = HTTP::Request->new ( 'POST', 
+				 "http://$args{user}:$args{pass}\@stream.twitter.com/1/statuses/filter.$format",
+				 [ 'Content-Type' => 'application/x-www-form-urlencoded' ],
+				 $content );
+  return $req if $args{getreq};
+
+  LWP::UserAgent->new->request ( $req,
+				 sub {
+				     my ( $chunk, $res ) = @_;
+				     $args{callback}($chunk, $res);
+				 } );
+}
+
 

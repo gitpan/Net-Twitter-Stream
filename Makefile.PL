@@ -10,6 +10,5 @@ WriteMakefile(
     ABSTRACT     => 'Connect to the Twitter streaming api',
     PREREQ_PM    => {
                      'Test::Simple' => 0.44,
-		     'Danga::Socket' => 0.0
                     },
 );

@@ -1,43 +1,41 @@
 NAME
-    Using Twitter's streaming api.
+
+Using Twitter's streaming api.
 
 SYNOPSIS
-     use Net::Twitter::Stream;
-     # Create "track" connection with a list of keywords.
-     Net::Twitter::Stream::Track->new ( $username, $password,
-		      'ffa,football,soccer,yankees,mashchat,mashable,tinychat,perl,memcached,nginx,javascript,talkabee,f136bc2d9f24,hackernews,reddit,clojure',
-                      \&got_tweet_callback );
-         # Create "follow" connection with a list of user ids.
-         Net::Twitter::Stream::Follow->new ( $username, $password,
-                           '27712481,14252288,972651,679303,18703227,3839,27712481',
-                           \&got_tweet_callback );
 
-         # Start listening
-         Danga::Socket->EventLoop;
+  use Net::Twitter::Stream;
 
-         sub got_tweet_callback {
-             my $tweet = shift;
-             print "By: $tweet->{user}{screen_name}\n";
-             print "Message: $tweet->{text}\n";
-         }
+  Net::Twitter::Stream->new ( user => $username, pass => $password, callback => \&got_tweet,
+                              track => 'perl,tinychat,emacs',
+                              follow => '27712481,14252288,972651,679303,18703227,3839,27712481' );
+
+     sub got_tweet {
+	 my $tweet = shift;
+	 print "By: $tweet->{user}{screen_name}\n";
+	 print "Message: $tweet->{text}\n";
+     }      
 
 DESCRIPTION
-    Twitter recently allowed access to a streaming version of their api. The
-    api is currently under "alpha test" release, but hopfully it will prove
-    scalable and become the normal way to suck data from the twitterverse.
 
-    Here is an example of how to use the api. In particular the code
-    connects to a track and a follow stream. Once connected the data flows
-    from server to client until something goes wrong.
+Twitter recently allowed access to a streaming version of their api.
+The api is currently under "alpha test" release, but hopfully it will
+prove scalable and become the normal way to suck data from the
+twitterverse.
 
-    Danga::Socket is required for event based network I/O and to manage
-    multiple connections. I run this on a Mac and use Net::GrowlClient to
-    display tweets as they come in but that can be easily changed.
+Recent update: Track and follow are now merged into a single api call.
+/1/status/filter.json now allows a single connection go listen for keywords
+and follow a list of users.
 
-    HTTP Basic authentication is supported so you will need a twitter
-    account to connect.
+HTTP Basic authentication is supported (no OAuth yet) so you will need a twitter
+account to connect.
 
-    As far a I can tell twitter only allows one connection per IP.
+Options 
+  user, pass: required, twitter account user/password
+  callback: required, a subroutine called on each received tweet
+  format: optional, returned data format, json or xml, defaults to json
 
-    perl@redmond5.com @martinredmond
+perl@redmond5.com
+@martinredmond
+
 
