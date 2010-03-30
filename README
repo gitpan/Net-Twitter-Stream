@@ -1,41 +1,34 @@
 NAME
-
-Using Twitter's streaming api.
+    Using Twitter's streaming api.
 
 SYNOPSIS
+      use Net::Twitter::Stream;
 
-  use Net::Twitter::Stream;
+      Net::Twitter::Stream->new ( user => $username, pass => $password, callback => \&got_tweet,
+                                  track => 'perl,tinychat,emacs',
+                                  follow => '27712481,14252288,972651,679303,18703227,3839,27712481' );
 
-  Net::Twitter::Stream->new ( user => $username, pass => $password, callback => \&got_tweet,
-                              track => 'perl,tinychat,emacs',
-                              follow => '27712481,14252288,972651,679303,18703227,3839,27712481' );
-
-     sub got_tweet {
-	 my $tweet = shift;
-	 print "By: $tweet->{user}{screen_name}\n";
-	 print "Message: $tweet->{text}\n";
-     }      
+         sub got_tweet {
+             my $tweet = shift;
+             print "By: $tweet->{user}{screen_name}\n";
+             print "Message: $tweet->{text}\n";
+         }
 
 DESCRIPTION
+    The Streaming verson of the Twitter API allows near-realtime access to
+    various subsets of Twitter public statuses.
 
-Twitter recently allowed access to a streaming version of their api.
-The api is currently under "alpha test" release, but hopfully it will
-prove scalable and become the normal way to suck data from the
-twitterverse.
+    Recent update: Track and follow are now merged into a single api call.
+    /1/status/filter.json now allows a single connection go listen for
+    keywords and follow a list of users.
 
-Recent update: Track and follow are now merged into a single api call.
-/1/status/filter.json now allows a single connection go listen for keywords
-and follow a list of users.
+    HTTP Basic authentication is supported (no OAuth yet) so you will need a
+    twitter account to connect.
 
-HTTP Basic authentication is supported (no OAuth yet) so you will need a twitter
-account to connect.
+    JSON format is only supported. Twitter may depreciate XML.
 
-Options 
-  user, pass: required, twitter account user/password
-  callback: required, a subroutine called on each received tweet
-  format: optional, returned data format, json or xml, defaults to json
+    Options user, pass: required, twitter account user/password callback:
+    required, a subroutine called on each received tweet
 
-perl@redmond5.com
-@martinredmond
-
+    perl@redmond5.com @martinredmond
 

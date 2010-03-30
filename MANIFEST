@@ -2,5 +2,5 @@ MANIFEST
 README
 LICENSE
 Makefile.PL
-lib/Net/Twitter/Stream.pm
+Stream.pm
 t/001_load.t
