@@ -5,7 +5,7 @@ use IO::Socket;
 use MIME::Base64;
 use JSON;
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 1;
 
 =head1 NAME
@@ -16,29 +16,33 @@ Using Twitter's streaming api.
 
   use Net::Twitter::Stream;
 
-  Net::Twitter::Stream->new ( user => $username, pass => $password, callback => \&got_tweet,
+  Net::Twitter::Stream->new ( user => $username, pass => $password,
+                              callback => \&got_tweet,
                               track => 'perl,tinychat,emacs',
-                              follow => '27712481,14252288,972651,679303,18703227,3839,27712481' );
+                              follow => '27712481,14252288,972651' );
 
      sub got_tweet {
-	 my $tweet = shift;
+	 my ( $tweet, $json ) = @_;   # a hash containing the tweet
+                                      # and the original json
 	 print "By: $tweet->{user}{screen_name}\n";
 	 print "Message: $tweet->{text}\n";
-     }      
+     }
 
 =head1 DESCRIPTION
 
-The Streaming verson of the Twitter API allows near-realtime access to 
+The Streaming verson of the Twitter API allows near-realtime access to
 various subsets of Twitter public statuses.
 
-Recent update: Track and follow are now merged into a single api call.
-/1/status/filter.json now allows a single connection go listen for keywords
-and follow a list of users.
+The /1/status/filter.json api call can be use to track up to 200 keywords
+and to follow 200 users.
 
-HTTP Basic authentication is supported (no OAuth yet) so you will need a twitter
-account to connect.
+HTTP Basic authentication is supported (no OAuth yet) so you will need
+a twitter account to connect.
 
 JSON format is only supported. Twitter may depreciate XML.
+
+
+More details at: http://dev.twitter.com/pages/streaming_api
 
 Options 
   user, pass: required, twitter account user/password
@@ -60,6 +64,8 @@ sub new {
   $self->{user} = $args{user};
   $self->{pass} = $args{pass};
   $self->{got_tweet} = $args{callback};
+  $self->{connection_closed} = $args{connection_closed_cb} if
+    $args{connection_closed_cb};
   
   my $content = "follow=$args{follow}" if $args{follow};
   $content = "track=$args{track}" if $args{track};
@@ -85,11 +91,16 @@ EOF
     last if $l =~ /^\s*$/;
   }
   while ( my $l = $sock->getline ) {
-    eval { 
-      my $o = from_json ( $l );
-      $self->{got_tweet} ( $o, $l );
-    };
+    next if $l =~ /^\s*$/;           # skip empty lines
+    $l =~ s/[^a-fA-F0-9]//g;         # stop hex from compaining about \r
+    my $jsonlen = hex ( $l );
+    last if $jsonlen == 0;
+    my $json;
+    my $len = $sock->read ( $json, $jsonlen );
+    my $o = from_json ( $json );
+    $self->{got_tweet} ( $o, $json );
   }
+  $self->{connection_closed} ( $sock ) if $self->{connection_closed};
 }
 
 

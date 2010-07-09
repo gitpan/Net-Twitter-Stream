@@ -1,8 +1,0 @@
-2010-03-30  root  <root@domU-12-31-39-04-50-E6.compute-1.internal>
-
-	* JSON: Do a json request only, not xml.  Twitter may depreciate xml.
-
-2010-03-30  root  <>
-
-	* Changes: Switch from LWP::UserAgent to IO::Socket. 
-
