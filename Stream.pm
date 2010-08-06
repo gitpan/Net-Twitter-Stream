@@ -5,7 +5,7 @@ use IO::Socket;
 use MIME::Base64;
 use JSON;
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 1;
 
 =head1 NAME
@@ -95,10 +95,12 @@ EOF
     $l =~ s/[^a-fA-F0-9]//g;         # stop hex from compaining about \r
     my $jsonlen = hex ( $l );
     last if $jsonlen == 0;
-    my $json;
-    my $len = $sock->read ( $json, $jsonlen );
-    my $o = from_json ( $json );
-    $self->{got_tweet} ( $o, $json );
+    eval {
+	my $json;
+	my $len = $sock->read ( $json, $jsonlen );
+	my $o = from_json ( $json );
+	$self->{got_tweet} ( $o, $json );
+    };
   }
   $self->{connection_closed} ( $sock ) if $self->{connection_closed};
 }
