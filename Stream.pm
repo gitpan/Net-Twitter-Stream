@@ -6,7 +6,7 @@ use MIME::Base64;
 use JSON;
 use IO::Socket::SSL;
 
-our $VERSION = '0.26';
+our $VERSION = '0.27';
 1;
 
 =head1 NAME
@@ -52,6 +52,10 @@ Options
 
 perl@redmond5.com
 @martinredmond
+
+=head1 UPDATES
+
+https fix: iwan standley <iwan@slebog.net>
 
 =cut
 

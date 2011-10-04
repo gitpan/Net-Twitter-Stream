@@ -4,12 +4,14 @@ NAME
 SYNOPSIS
       use Net::Twitter::Stream;
 
-      Net::Twitter::Stream->new ( user => $username, pass => $password, callback => \&got_tweet,
+      Net::Twitter::Stream->new ( user => $username, pass => $password,
+                                  callback => \&got_tweet,
                                   track => 'perl,tinychat,emacs',
-                                  follow => '27712481,14252288,972651,679303,18703227,3839,27712481' );
+                                  follow => '27712481,14252288,972651' );
 
          sub got_tweet {
-             my $tweet = shift;
+             my ( $tweet, $json ) = @_;   # a hash containing the tweet
+                                          # and the original json
              print "By: $tweet->{user}{screen_name}\n";
              print "Message: $tweet->{text}\n";
          }
@@ -18,17 +20,21 @@ DESCRIPTION
     The Streaming verson of the Twitter API allows near-realtime access to
     various subsets of Twitter public statuses.
 
-    Recent update: Track and follow are now merged into a single api call.
-    /1/status/filter.json now allows a single connection go listen for
-    keywords and follow a list of users.
+    The /1/status/filter.json api call can be use to track up to 200
+    keywords and to follow 200 users.
 
     HTTP Basic authentication is supported (no OAuth yet) so you will need a
     twitter account to connect.
 
     JSON format is only supported. Twitter may depreciate XML.
 
+    More details at: http://dev.twitter.com/pages/streaming_api
+
     Options user, pass: required, twitter account user/password callback:
     required, a subroutine called on each received tweet
 
     perl@redmond5.com @martinredmond
+
+UPDATES
+    https fix: iwan standley <iwan@slebog.net>
 

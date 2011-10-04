@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Net-Twitter-Stream
-version:            0.26
+version:            0.27
 abstract:           Connect to the Twitter streaming api
 author:
     - Martin Redmond (@martinredmond)
