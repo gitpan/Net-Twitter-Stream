@@ -4,8 +4,9 @@ use warnings;
 use IO::Socket;
 use MIME::Base64;
 use JSON;
+use IO::Socket::SSL;
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 1;
 
 =head1 NAME
@@ -85,7 +86,7 @@ Content-Length: $cl\r
 \r
 EOF
   
-  my $sock = IO::Socket::INET->new ( PeerAddr => 'stream.twitter.com:80' );
+  my $sock = IO::Socket::INET->new ( PeerAddr => 'stream.twitter.com:https' );
   $sock->print ( "$req$content" );
   while ( my $l = $sock->getline ) {
     last if $l =~ /^\s*$/;
